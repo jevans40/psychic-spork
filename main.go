@@ -8,6 +8,7 @@ import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/jevans40/graphics"
+	"github.com/jevans40/linmath"
 )
 
 func init() {
@@ -41,8 +42,46 @@ func main() {
 	fmt.Println("Starting the Psychic-Spork game engine!")
 	fmt.Println("OpenGL version", version)
 
+	var vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
+
+	triangle := make([]linmath.Vector3, 3)
+
+	triangle[0] = linmath.NewVector3(-1, -1, 0)
+	triangle[1] = linmath.NewVector3(1, -1, 0)
+	triangle[2] = linmath.NewVector3(0, 1, 0)
+
+	searialTriangle := []float32{}
+	for _, v := range triangle {
+		x := v.ToFloats()
+		searialTriangle = append(searialTriangle, x[:]...)
+	}
+
+	program, err := graphics.CreateDefaultProgram()
+	if err != nil {
+		panic(err)
+	}
+
+	var vbo uint32
+
+	// Generate 1 buffer, put the resulting identifier in vertexbuffer
+	gl.GenBuffers(1, &vbo)
+	// The following commands will talk about our 'vertexbuffer' buffer
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	// Give our vertices to OpenGL
+	gl.BufferData(gl.ARRAY_BUFFER, len(searialTriangle)*4, gl.Ptr(searialTriangle), gl.STATIC_DRAW)
+
+	// Configure global settings
+	//gl.Enable(gl.DEPTH_TEST)
+	//gl.DepthFunc(gl.LESS)
+	gl.ClearColor(0.0, 0.0, 0.4, 0.0)
+
 	for !gameWindow.GetWindow().ShouldClose() {
-		//GL Goes here
+		graphics.Update()
+
+		graphics.Render(vbo, program)
+
 		gameWindow.GetWindow().SwapBuffers()
 		glfw.PollEvents()
 	}

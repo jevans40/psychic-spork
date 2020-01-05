@@ -1,11 +1,9 @@
 package graphics
 
 var fragmentShader = `
-#version 330
-uniform sampler2D tex;
-in vec2 fragTexCoord;
-out vec4 outputColor;
-void main() {
-    outputColor = texture(tex, fragTexCoord);
+#version 330 core
+out vec3 color;
+void main(){
+  color = vec3(1,0,0);
 }
 ` + "\x00"

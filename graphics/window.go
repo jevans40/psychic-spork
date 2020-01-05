@@ -8,7 +8,7 @@ import (
 type GoWindow struct {
 	lWindow *glfw.Window
 	lErr    error
-	lsize   [2]int
+	lSize   [2]int
 }
 
 // NewWindow Initalizes the information into a goWindow
@@ -24,7 +24,7 @@ func NewWindow(x int, y int) *GoWindow {
 	thisWindow := GoWindow{}
 	thisWindow.lWindow = win
 	thisWindow.lErr = err
-	thisWindow.lsize = [2]int{x, y}
+	thisWindow.lSize = [2]int{x, y}
 	return &thisWindow
 }
 
@@ -36,4 +36,11 @@ func (thisWindow *GoWindow) GetError() error {
 //GetWindow returns the lWindow feild associated with GoWindow
 func (thisWindow *GoWindow) GetWindow() *glfw.Window {
 	return thisWindow.lWindow
+}
+
+//GetSize returns the lSize feild associated with GoWindow
+func (thisWindow *GoWindow) GetSize() (x int, y int) {
+	x = thisWindow.lSize[0]
+	y = thisWindow.lSize[1]
+	return
 }
