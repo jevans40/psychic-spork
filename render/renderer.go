@@ -1,4 +1,4 @@
-package graphics
+package render
 
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -16,8 +16,10 @@ type Renderer struct {
 func Render(vbo, program uint32) {
 	// 1st attribute buffer : vertices
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.EnableVertexAttribArray(0)
 	gl.UseProgram(program)
+	gl.EnableVertexAttribArray(0)
+
+	//Send vertex information to the graphics card
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.VertexAttribPointer(
 		0,               // attribute 0. No particular reason for 0, but must match the layout in the shader.
@@ -27,6 +29,8 @@ func Render(vbo, program uint32) {
 		0,               // stride
 		gl.PtrOffset(0), // array buffer offset
 	)
+
+	//TODO:: Send colors
 	// Draw the triangle !
 	gl.DrawArrays(gl.TRIANGLES, 0, 3) // Starting from vertex 0; 3 vertices total -> 1 triangle
 	gl.DisableVertexAttribArray(0)

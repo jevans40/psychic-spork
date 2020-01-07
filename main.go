@@ -9,6 +9,7 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/jevans40/graphics"
 	"github.com/jevans40/linmath"
+	"github.com/jevans40/render"
 )
 
 func init() {
@@ -58,7 +59,7 @@ func main() {
 		searialTriangle = append(searialTriangle, x[:]...)
 	}
 
-	program, err := graphics.CreateDefaultProgram()
+	program, err := render.CreateDefaultProgram()
 	if err != nil {
 		panic(err)
 	}
@@ -73,14 +74,14 @@ func main() {
 	gl.BufferData(gl.ARRAY_BUFFER, len(searialTriangle)*4, gl.Ptr(searialTriangle), gl.STATIC_DRAW)
 
 	// Configure global settings
-	//gl.Enable(gl.DEPTH_TEST)
-	//gl.DepthFunc(gl.LESS)
+	gl.Enable(gl.DEPTH_TEST)
+	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.0, 0.0, 0.4, 0.0)
 
 	for !gameWindow.GetWindow().ShouldClose() {
 		graphics.Update()
 
-		graphics.Render(vbo, program)
+		render.Render(vbo, program)
 
 		gameWindow.GetWindow().SwapBuffers()
 		glfw.PollEvents()
