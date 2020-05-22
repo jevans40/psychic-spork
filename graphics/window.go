@@ -40,7 +40,8 @@ func (thisWindow *GoWindow) GetWindow() *glfw.Window {
 
 //GetSize returns the lSize feild associated with GoWindow
 func (thisWindow *GoWindow) GetSize() (x int, y int) {
-	x = thisWindow.lSize[0]
-	y = thisWindow.lSize[1]
+	x, y = thisWindow.lWindow.GetSize()
+	thisWindow.lSize[0] = x
+	thisWindow.lSize[1] = y
 	return
 }

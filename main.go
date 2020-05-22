@@ -43,10 +43,6 @@ func main() {
 	fmt.Println("Starting the Psychic-Spork game engine!")
 	fmt.Println("OpenGL version", version)
 
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-
 	triangle := make([]linmath.Vector3, 3)
 
 	triangle[0] = linmath.NewVector3(-1, -1, 0)
@@ -64,24 +60,12 @@ func main() {
 		panic(err)
 	}
 
-	var vbo uint32
-
-	// Generate 1 buffer, put the resulting identifier in vertexbuffer
-	gl.GenBuffers(1, &vbo)
-	// The following commands will talk about our 'vertexbuffer' buffer
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	// Give our vertices to OpenGL
-	gl.BufferData(gl.ARRAY_BUFFER, len(searialTriangle)*4, gl.Ptr(searialTriangle), gl.STATIC_DRAW)
-
-	// Configure global settings
-	gl.Enable(gl.DEPTH_TEST)
-	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0.0, 0.0, 0.4, 0.0)
+	thisRender := render.NewTestRenderer(program)
 
 	for !gameWindow.GetWindow().ShouldClose() {
 		graphics.Update()
-
-		render.Render(vbo, program)
+		x, y := gameWindow.GetSize()
+		thisRender.Render(int32(x), int32(y))
 
 		gameWindow.GetWindow().SwapBuffers()
 		glfw.PollEvents()
