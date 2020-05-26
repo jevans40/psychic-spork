@@ -33,7 +33,7 @@ type Vertice interface {
 type vertice [7]float32
 
 //NewVertice Factory for creating a new vertice
-func NewVertice(x, y, z, tx, ty float32, R, G, B, A uint8, texmap uint32) Vertice {
+func VerticeFactory(x, y, z, tx, ty float32, R, G, B, A uint8, texmap uint32) Vertice {
 	return &vertice{x, y, z, tx, ty, intToFloat(charToInt(([4]uint8{R, G, B, A}))), intToFloat(texmap)}
 }
 

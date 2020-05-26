@@ -2,7 +2,7 @@ package render
 
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/jevans40/linmath"
+	"github.com/psychic-spork/linmath"
 )
 
 //Renderer Is a interface for all render types, they have one job, given a window size, render shit
@@ -49,10 +49,10 @@ func Render(vbo, program uint32) {
 
 //NewTestRenderer i dont know why i need a comment yet but here it be
 func NewTestRenderer(programObject uint32) Renderer {
-	vert1 := NewVertice(100, 100, 50, 0, 0, 0, 255, 255, 255, 0)
-	vert2 := NewVertice(100, 1000, 50, 0, 0, 0, 255, 0, 255, 0)
-	vert3 := NewVertice(1000, 100, 50, 0, 0, 200, 255, 255, 255, 0)
-	vert4 := NewVertice(1000, 1000, 50, 0, 0, 200, 255, 0, 255, 0)
+	vert1 := VerticeFactory(100, 100, 50, 0, 0, 0, 255, 255, 255, 0)
+	vert2 := VerticeFactory(100, 1000, 50, 0, 0, 0, 255, 0, 255, 0)
+	vert3 := VerticeFactory(1000, 100, 50, 0, 0, 200, 255, 255, 255, 0)
+	vert4 := VerticeFactory(1000, 1000, 50, 0, 0, 200, 255, 0, 255, 0)
 
 	triangle := make([]Vertice, 4)
 	triangle[0] = vert1

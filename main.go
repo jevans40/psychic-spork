@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
-	"github.com/jevans40/graphics"
-	"github.com/jevans40/linmath"
-	"github.com/jevans40/render"
+	"github.com/psychic-spork/graphics"
+	"github.com/psychic-spork/linmath"
+	"github.com/psychic-spork/render"
 )
 
 func init() {
@@ -55,12 +55,12 @@ func main() {
 		searialTriangle = append(searialTriangle, x[:]...)
 	}
 
-	program, err := render.CreateDefaultProgram()
-	if err != nil {
-		panic(err)
-	}
+	thisRender := render.SpriteRendererFactory()
 
-	thisRender := render.NewTestRenderer(program)
+	sprite := render.SimpleSpriteFactory(thisRender)
+	sprite.Move(0, 0, 0)
+	sprite.Resize(100, 100)
+	sprite.Recolor(255, 255, 0, 255)
 
 	for !gameWindow.GetWindow().ShouldClose() {
 		graphics.Update()
