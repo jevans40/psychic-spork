@@ -43,6 +43,10 @@ func main() {
 	fmt.Println("Starting the Psychic-Spork game engine!")
 	fmt.Println("OpenGL version", version)
 
+	var nrAttributes int32
+	gl.GetIntegerv(gl.MAX_VERTEX_ATTRIBS, &nrAttributes)
+	fmt.Println("Max Attributes Supported: ", nrAttributes)
+
 	triangle := make([]linmath.Vector3, 3)
 
 	triangle[0] = linmath.NewVector3(-1, -1, 0)
@@ -65,13 +69,14 @@ func main() {
 	sprite2 := render.SimpleSpriteFactory(&thisRender)
 	sprite2.Move(200, 200, 50)
 	sprite2.Resize(150, 200)
-	sprite2.Recolor(255, 255, 0, 255)
+	sprite2.Recolor(255, 127, 0, 255)
 
 	for !gameWindow.GetWindow().ShouldClose() {
 		graphics.Update()
 		x, y := gameWindow.GetSize()
 		thisRender.Render(int32(x), int32(y))
-
+		r, g, b, a := sprite2.GetColor()
+		sprite2.Recolor((r+1)%255, (g+1)%255, (b+1)%255, a)
 		gameWindow.GetWindow().SwapBuffers()
 		glfw.PollEvents()
 	}
