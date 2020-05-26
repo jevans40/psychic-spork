@@ -27,7 +27,7 @@ func main() {
 	}
 	defer glfw.Terminate()
 
-	gameWindow := graphics.NewWindow(600, 400)
+	gameWindow := graphics.NewWindow(1080, 920)
 	if err != nil {
 		panic(err)
 	}
@@ -57,10 +57,15 @@ func main() {
 
 	thisRender := render.SpriteRendererFactory()
 
-	sprite := render.SimpleSpriteFactory(thisRender)
-	sprite.Move(0, 0, 0)
+	sprite := render.SimpleSpriteFactory(&thisRender)
+	sprite.Move(10, 10, 50)
 	sprite.Resize(100, 100)
-	sprite.Recolor(255, 255, 0, 255)
+	sprite.Recolor(0, 255, 0, 255)
+
+	sprite2 := render.SimpleSpriteFactory(&thisRender)
+	sprite2.Move(200, 200, 50)
+	sprite2.Resize(150, 200)
+	sprite2.Recolor(255, 255, 0, 255)
 
 	for !gameWindow.GetWindow().ShouldClose() {
 		graphics.Update()

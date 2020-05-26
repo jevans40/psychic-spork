@@ -60,17 +60,21 @@ func (thisRenderer *SpriteRenderer) Render(width, height int32) {
 	mat := orthomat.ToFloats()
 	gl.UniformMatrix4fv(loc, 1, false, &mat[0])
 	thisRenderer.bind()
-	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.PtrOffset(0)) // Starting from vertex 0; 3 vertices total -> 1 triangle
+	gl.DrawElements(gl.TRIANGLES, 6*thisRenderer.numOfSprites, gl.UNSIGNED_INT, gl.PtrOffset(0)) // Starting from vertex 0; 3 vertices total -> 1 triangle
 	thisRenderer.unbind()
 
 }
 
 func (thisRenderer *SpriteRenderer) init() {
+	thisRenderer.allocation = append(thisRenderer.allocation, false)
+	thisRenderer.vert = append(thisRenderer.vert, make([]float32, 28)...)
+	thisRenderer.elem = append(thisRenderer.elem, make([]uint32, 6)...)
+
 	thisRenderer.bind()
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0.0, 0.2, 0.7, 0.0)
+	gl.ClearColor(0.0, 0.2, 0.1, 0.0)
 
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
@@ -89,6 +93,7 @@ func (thisRenderer *SpriteRenderer) init() {
 }
 
 func (thisRenderer *SpriteRenderer) bind() {
+
 	gl.BindVertexArray(thisRenderer.vertexArrayObject)
 	gl.BindBuffer(gl.ARRAY_BUFFER, thisRenderer.vertexBufferObject)
 	gl.BufferData(gl.ARRAY_BUFFER, len(thisRenderer.vert)*4, gl.Ptr(thisRenderer.vert), gl.STATIC_DRAW)
@@ -106,8 +111,8 @@ func (thisRenderer *SpriteRenderer) unbind() {
 func (thisRenderer *SpriteRenderer) GetArraySprite() (returnSlice []float32) {
 	slot := uint32(thisRenderer.allocate())
 	returnSlice = thisRenderer.vert[slot*28 : (slot+1)*28]
-	newElem := []uint32{slot * 4, slot*4 + 1, slot*4 + 2, slot*4 + 1, slot*4 + 2, slot*4 + 3}
-	thisRenderer.numOfSprites++
+	newElem := []uint32{slot * 4, slot*4 + 1, slot*4 + 2, slot*4 + 2, slot*4 + 3, slot*4 + 1}
+	thisRenderer.numOfSprites = thisRenderer.numOfSprites + 1
 	copy(thisRenderer.elem[slot*6:(slot+1)*6], newElem)
 	return
 }
@@ -115,7 +120,7 @@ func (thisRenderer *SpriteRenderer) GetArraySprite() (returnSlice []float32) {
 func (thisRenderer *SpriteRenderer) allocate() int32 {
 	for i, v := range thisRenderer.allocation {
 		if !v {
-			v = true
+			thisRenderer.allocation[i] = true
 			return int32(i)
 		}
 	}
@@ -123,7 +128,7 @@ func (thisRenderer *SpriteRenderer) allocate() int32 {
 	thisRenderer.allocation = append(thisRenderer.allocation, true)
 	thisRenderer.vert = append(thisRenderer.vert, make([]float32, 28)...)
 	thisRenderer.elem = append(thisRenderer.elem, make([]uint32, 6)...)
-	return int32(len(thisRenderer.vert))
+	return int32(len(thisRenderer.allocation) - 1)
 }
 
 func (thisRenderer *SpriteRenderer) DeallocateSprite(num int32) {

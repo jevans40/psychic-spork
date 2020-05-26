@@ -1,7 +1,5 @@
 package render
 
-import "unsafe"
-
 type simpleSprite struct {
 	verticeData     []float32
 	size            [2]float32
@@ -12,13 +10,14 @@ type simpleSprite struct {
 	color           [4]uint8
 }
 
-func SimpleSpriteFactory(thisRenderer SpriteRenderer) Sprite {
+//Creates a new Sprite and automatically requests space from the renderer
+func SimpleSpriteFactory(thisRenderer *SpriteRenderer) Sprite {
 	var vertdat []float32
 	size := [2]float32{0, 0}
 	pos := [3]float32{0, 0, 0}
 	texPos := [2]float32{0, 0}
 	texSize := [2]float32{0, 0}
-	texMap := 999
+	texMap := 0
 	col := [4]uint8{255, 0, 0, 0}
 
 	sprite := simpleSprite{vertdat, size, pos, texPos, texSize, uint32(texMap), col}
@@ -29,16 +28,20 @@ func SimpleSpriteFactory(thisRenderer SpriteRenderer) Sprite {
 
 func (thisSprite *simpleSprite) calculateVerticies() {
 
-	vert := *(*[4]vertice)(unsafe.Pointer(&thisSprite.verticeData))
+	vert := [4]vertice{}
 
 	for i := 0; i < 4; i++ {
 		vert[i].SetColor(thisSprite.color)
 		vert[i].SetMap(thisSprite.textureMap)
 		vert[i].SetTexX(thisSprite.texturePosition[0] + thisSprite.textureSize[0]*float32((i)%2))
-		vert[i].SetTexY(thisSprite.texturePosition[1] + thisSprite.textureSize[1]*float32(int32((i-1)/2)%2))
+		vert[i].SetTexY(thisSprite.texturePosition[1] + thisSprite.textureSize[1]*float32(int32((i)/2)%2))
 		vert[i].SetX(thisSprite.position[0] + thisSprite.size[0]*float32((i)%2))
-		vert[i].SetY(thisSprite.position[1] + thisSprite.size[1]*float32(int32((i-1)/2)%2))
+		vert[i].SetY(thisSprite.position[1] + thisSprite.size[1]*float32(int32((i)/2)%2))
 		vert[i].SetZ(thisSprite.position[2])
+	}
+
+	for i, v := range vert {
+		copy(thisSprite.verticeData[7*i:7*i+7], v[:])
 	}
 }
 
