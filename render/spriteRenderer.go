@@ -3,6 +3,7 @@ package render
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/psychic-spork/linmath"
+	"github.com/jevans40/psychic-spork/linmath"
 )
 
 type SpriteRenderer struct {
@@ -19,6 +20,8 @@ type SpriteRenderer struct {
 	allocation []bool
 }
 
+func SpriteRendererFactory( /*SourceAtlas ImageAtlas*/ ) SpriteRenderer {
+	//size := SourceAtlas.imageSize
 func SpriteRendererFactory() SpriteRenderer {
 
 	//First Generate a Vertex Array to bind the vertex buffer object and the element buffer object to
@@ -43,6 +46,8 @@ func SpriteRendererFactory() SpriteRenderer {
 	var vert []float32
 	var elem []uint32
 	var allocation []bool
+
+	//Make the sprite atlas
 
 	newRenderer := SpriteRenderer{vbo, vao, ebo, 0, program, vert, elem, allocation}
 	newRenderer.init()
@@ -75,6 +80,8 @@ func (thisRenderer *SpriteRenderer) init() {
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.0, 0.2, 0.1, 0.0)
+	gl.Enable(gl.BLEND)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
 	gl.EnableVertexAttribArray(0)
 	gl.EnableVertexAttribArray(1)
@@ -108,8 +115,9 @@ func (thisRenderer *SpriteRenderer) unbind() {
 	gl.BindVertexArray(0)
 }
 
-func (thisRenderer *SpriteRenderer) GetArraySprite() (returnSlice []float32) {
+func (thisRenderer *SpriteRenderer) GetArraySprite() (returnSlice []float32, spriteNum int32) {
 	slot := uint32(thisRenderer.allocate())
+	spriteNum = int32(slot)
 	returnSlice = thisRenderer.vert[slot*28 : (slot+1)*28]
 	newElem := []uint32{slot * 4, slot*4 + 1, slot*4 + 2, slot*4 + 2, slot*4 + 3, slot*4 + 1}
 	thisRenderer.numOfSprites = thisRenderer.numOfSprites + 1

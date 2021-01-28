@@ -8,6 +8,8 @@ type simpleSprite struct {
 	textureSize     [2]float32
 	textureMap      uint32
 	color           [4]uint8
+	spriteNum       int32
+	SpriteRender    *SpriteRenderer
 }
 
 //Creates a new Sprite and automatically requests space from the renderer
@@ -19,9 +21,10 @@ func SimpleSpriteFactory(thisRenderer *SpriteRenderer) Sprite {
 	texSize := [2]float32{0, 0}
 	texMap := 0
 	col := [4]uint8{255, 0, 0, 0}
+	spritenum := 0
 
-	sprite := simpleSprite{vertdat, size, pos, texPos, texSize, uint32(texMap), col}
-	sprite.verticeData = thisRenderer.GetArraySprite()
+	sprite := simpleSprite{vertdat, size, pos, texPos, texSize, uint32(texMap), col, int32(spritenum), thisRenderer}
+	sprite.verticeData, sprite.spriteNum = thisRenderer.GetArraySprite()
 	sprite.calculateVerticies()
 	return &sprite
 }
@@ -39,6 +42,8 @@ func (thisSprite *simpleSprite) calculateVerticies() {
 		vert[i].SetY(thisSprite.position[1] + thisSprite.size[1]*float32(int32((i)/2)%2))
 		vert[i].SetZ(thisSprite.position[2])
 	}
+	thisSprite.SpriteRender.DeallocateSprite(thisSprite.spriteNum)
+	thisSprite.verticeData, thisSprite.spriteNum = thisSprite.SpriteRender.GetArraySprite()
 
 	for i, v := range vert {
 		copy(thisSprite.verticeData[7*i:7*i+7], v[:])
@@ -67,10 +72,12 @@ func (thisSprite *simpleSprite) SetTexPos(x float32, y float32) {
 
 func (thisSprite *simpleSprite) SetTexSize(x float32, y float32) {
 	thisSprite.textureSize = [2]float32{x, y}
+	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) SetMap(newMap uint32) {
 	thisSprite.textureMap = newMap
+	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) GetSize() (x, y float32) {
