@@ -9,6 +9,9 @@ type orthoMat4f [16]float32
 
 //NewOrthoMat4f Makes an orthoganal projection matrix
 func NewOrthoMat4f(bottom, top, left, right, near, far float32) Matrix4f {
+	if right-left == 0 || top-bottom == 0 || far-near == 0 {
+		return &orthoMat4f{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	}
 	return &orthoMat4f{2 / (right - left), 0, 0, 0,
 		0, 2 / (top - bottom), 0, 0,
 		0, 0, -2 / (far - near), 0,

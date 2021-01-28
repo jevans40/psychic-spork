@@ -1,15 +1,13 @@
 package main
 
 import (
-	"fmt"
-
 	"runtime"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
-	"github.com/psychic-spork/graphics"
-	"github.com/psychic-spork/linmath"
-	"github.com/psychic-spork/render"
+	"github.com/jevans40/psychic-spork/graphics"
+	"github.com/jevans40/psychic-spork/logging"
+	"github.com/jevans40/psychic-spork/render"
 )
 
 func init() {
@@ -20,56 +18,68 @@ func init() {
 
 func main() {
 
+	//Setup Logging
+	logging.Initalize()
+
 	runtime.LockOSThread()
 	err := glfw.Init()
 	if err != nil {
-		panic(err)
+		logging.Log.Panic(err)
 	}
 	defer glfw.Terminate()
 
 	gameWindow := graphics.NewWindow(1080, 920)
 	if err != nil {
-		panic(err)
+		logging.Log.Panic(err)
 	}
 
 	glfw.DetachCurrentContext()
 	(gameWindow.GetWindow()).MakeContextCurrent()
 
 	if err := gl.Init(); err != nil {
-		panic(err)
+		logging.Log.Panic(err)
 	}
 
 	version := gl.GoStr(gl.GetString(gl.VERSION))
-	fmt.Println("Starting the Psychic-Spork game engine!")
-	fmt.Println("OpenGL version", version)
+	logging.Log.Notice("Starting the Psychic-Spork game engine!")
+	logging.Log.Infof("OpenGL version: %s", version)
 
 	var nrAttributes int32
 	gl.GetIntegerv(gl.MAX_VERTEX_ATTRIBS, &nrAttributes)
-	fmt.Println("Max Attributes Supported: ", nrAttributes)
+	logging.Log.Infof("Max Attributes Supported: %v", nrAttributes)
 
-	triangle := make([]linmath.Vector3, 3)
+	//Get maximum texture size
+	var MaximumTextureSize int32
+	gl.GetIntegerv(gl.MAX_TEXTURE_SIZE, &MaximumTextureSize)
+	logging.Log.Infof("Maximum Texture Size: %v", MaximumTextureSize)
 
-	triangle[0] = linmath.NewVector3(-1, -1, 0)
-	triangle[1] = linmath.NewVector3(1, -1, 0)
-	triangle[2] = linmath.NewVector3(0, 1, 0)
+	var MaximumTextureUnits int32
+	gl.GetIntegerv(gl.MAX_TEXTURE_IMAGE_UNITS, &MaximumTextureUnits)
+	logging.Log.Infof("Maximum Texture Units: %v", MaximumTextureUnits)
 
-	searialTriangle := []float32{}
-	for _, v := range triangle {
-		x := v.ToFloats()
-		searialTriangle = append(searialTriangle, x[:]...)
-	}
-
+	//Set Renderer
 	thisRender := render.SpriteRendererFactory()
 
+	//Test Sprites move to render_test later
 	sprite := render.SimpleSpriteFactory(&thisRender)
 	sprite.Move(10, 10, 50)
 	sprite.Resize(100, 100)
-	sprite.Recolor(0, 255, 0, 255)
+	sprite.Recolor(50, 255, 50, 255)
+	sprite.SetTexSize(1, 1)
 
 	sprite2 := render.SimpleSpriteFactory(&thisRender)
 	sprite2.Move(200, 200, 50)
 	sprite2.Resize(150, 200)
 	sprite2.Recolor(255, 127, 0, 255)
+	sprite2.SetTexSize(1, 1)
+	sprite2.SetMap(1)
+
+	sprite3 := render.SimpleSpriteFactory(&thisRender)
+	sprite3.Move(800, 200, 50)
+	sprite3.Resize(150, 200)
+	sprite3.Recolor(125, 127, 0, 255)
+	sprite3.SetTexSize(1, 1)
+	sprite3.SetMap(1)
 
 	for !gameWindow.GetWindow().ShouldClose() {
 		graphics.Update()
