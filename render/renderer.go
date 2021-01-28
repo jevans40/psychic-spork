@@ -2,7 +2,7 @@ package render
 
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/psychic-spork/linmath"
+	"github.com/jevans40/psychic-spork/linmath"
 )
 
 //Renderer Is a interface for all render types, they have one job, given a window size, render shit

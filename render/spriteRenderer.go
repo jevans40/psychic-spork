@@ -1,8 +1,11 @@
 package render
 
 import (
+	"image"
+	"image/draw"
+
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/psychic-spork/linmath"
+	"github.com/jevans40/psychic-spork/file"
 	"github.com/jevans40/psychic-spork/linmath"
 )
 
@@ -22,8 +25,18 @@ type SpriteRenderer struct {
 
 func SpriteRendererFactory( /*SourceAtlas ImageAtlas*/ ) SpriteRenderer {
 	//size := SourceAtlas.imageSize
-func SpriteRendererFactory() SpriteRenderer {
-
+	var texture uint32
+	gl.GenTextures(1, &texture)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	data := file.LoadImageFromFile("./res/image/God.png")
+	rect := data.Bounds()
+	rgba := image.NewRGBA(rect)
+	draw.Draw(rgba, rect, data, rect.Min, draw.Src)
+	//pixData := rgba.Pix
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(rect.Max.X-rect.Min.X), int32(rect.Max.Y-rect.Min.Y), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(rgba.Pix))
 	//First Generate a Vertex Array to bind the vertex buffer object and the element buffer object to
 	var vao uint32
 	gl.GenVertexArrays(1, &vao)
@@ -61,6 +74,7 @@ func (thisRenderer *SpriteRenderer) Render(width, height int32) {
 
 	orthomat := linmath.NewOrthoMat4f(float32(height), 0, 0, float32(width), 1, 0)
 	gl.UseProgram(thisRenderer.programObject)
+	gl.Uniform1i(gl.GetUniformLocation(thisRenderer.programObject, gl.Str("texture1"+"\x00")), 0)
 	loc := gl.GetUniformLocation(thisRenderer.programObject, gl.Str("MVT"+"\x00"))
 	mat := orthomat.ToFloats()
 	gl.UniformMatrix4fv(loc, 1, false, &mat[0])
