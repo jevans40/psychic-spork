@@ -3,6 +3,7 @@ package file
 import (
 	"image"
 	"image/draw"
+	"image/png"
 	_ "image/png"
 	"os"
 
@@ -35,8 +36,7 @@ func LoadImageFromFile(filename string) *image.RGBA {
 	return m
 }
 
-/*
-func SaveImageToFile(filename string, img image.RGBA) {
+func SaveImageToFile(filename string, img image.Image) {
 	f, err := os.Create(filename)
 	if err != nil {
 		logging.Log.Panic(err)
@@ -48,7 +48,7 @@ func SaveImageToFile(filename string, img image.RGBA) {
 		logging.Log.Panic(err)
 	}
 }
-*/
+
 func DrawToImage(src, dst image.Image, sp image.Point) *image.RGBA {
 	b := dst.Bounds()
 	m := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
