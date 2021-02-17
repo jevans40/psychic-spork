@@ -26,5 +26,6 @@ func TestSpriteCreation(t *testing.T) {
 	//testAtlas.AddImageFromImage(testImage, "TestImage")
 	testAtlas.Init()
 	//file.SaveImageToFile("./../testres/image/AtlasTest.png", testAtlas.getAtlas(0))
+	//messages := map[string](chan int){}
 
 }
