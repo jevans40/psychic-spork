@@ -24,7 +24,8 @@ func SimpleSpriteFactory(thisRenderer *SpriteRenderer) Sprite {
 	spritenum := 0
 
 	sprite := simpleSprite{vertdat, size, pos, texPos, texSize, uint32(texMap), col, int32(spritenum), thisRenderer}
-	sprite.verticeData, sprite.spriteNum = thisRenderer.GetArraySprite()
+	var _ SpriteRendererSubscriber = (*simpleSprite)(nil)
+	sprite.verticeData, sprite.spriteNum = thisRenderer.SubscribeSprite(&sprite)
 	sprite.calculateVerticies()
 	return &sprite
 }
@@ -42,42 +43,38 @@ func (thisSprite *simpleSprite) calculateVerticies() {
 		vert[i].SetY(thisSprite.position[1] + thisSprite.size[1]*float32(int32((i)/2)%2))
 		vert[i].SetZ(thisSprite.position[2])
 	}
-	thisSprite.SpriteRender.DeallocateSprite(thisSprite.spriteNum)
-	thisSprite.verticeData, thisSprite.spriteNum = thisSprite.SpriteRender.GetArraySprite()
 
 	for i, v := range vert {
 		copy(thisSprite.verticeData[7*i:7*i+7], v[:])
 	}
 }
 
+func (thisSprite *simpleSprite) RemoveSprite() {
+	thisSprite.SpriteRender.Unsubscribe(thisSprite, thisSprite.spriteNum)
+}
+
 func (thisSprite *simpleSprite) Resize(x float32, y float32) {
 	thisSprite.size = [2]float32{x, y}
-	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) Move(x float32, y float32, z float32) {
 	thisSprite.position = [3]float32{x, y, z}
-	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) Recolor(r uint8, g uint8, b uint8, a uint8) {
 	thisSprite.color = [4]uint8{r, g, b, a}
-	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) SetTexPos(x float32, y float32) {
 	thisSprite.texturePosition = [2]float32{x, y}
-	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) SetTexSize(x float32, y float32) {
 	thisSprite.textureSize = [2]float32{x, y}
-	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) SetMap(newMap uint32) {
 	thisSprite.textureMap = newMap
-	thisSprite.calculateVerticies()
 }
 
 func (thisSprite *simpleSprite) GetSize() (x, y float32) {
@@ -108,4 +105,13 @@ func (thisSprite *simpleSprite) GetTexSize() (x, y float32) {
 func (thisSprite *simpleSprite) GetMap() (texMap uint32) {
 	texMap = thisSprite.textureMap
 	return
+}
+
+func (thisSprite *simpleSprite) UpdateRenderVert(returnSlice []float32, SpriteNum int32) {
+	thisSprite.verticeData = returnSlice
+	thisSprite.spriteNum = SpriteNum
+}
+
+func (thisSprite *simpleSprite) RendererCallback() {
+	thisSprite.calculateVerticies()
 }

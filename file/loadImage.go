@@ -17,7 +17,7 @@ type notOpaqueRGBA struct {
 func (i *notOpaqueRGBA) Opaque() bool {
 	return false
 }
-
+//TODO:: Handle errors gracefully; no need to crash if a image is missing.
 func LoadImageFromFile(filename string) *image.RGBA {
 	f, err := os.Open(filename)
 	if err != nil {

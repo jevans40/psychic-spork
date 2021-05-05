@@ -14,16 +14,22 @@ type SpriteRenderer struct {
 	vertexArrayObject   uint32
 	elementBufferObject uint32
 	numOfSprites        int32
+	maxSprites          int32
 	programObject       uint32
 	vert                []float32
 
 	//The order of elements should be 0,1,2,1,2,3
-	elem []uint32
+	elem ElementBuffer
 
 	allocation []bool
+
+	uniformlocations map[string]map[uint32]int32
+
+	//TODO: Make this a map
+	subscribers []SpriteRendererSubscriber
 }
 
-func SpriteRendererFactory( /*SourceAtlas ImageAtlas*/ ) SpriteRenderer {
+func SpriteRendererFactory( /*SourceAtlas ImageAtlas,*/ ) SpriteRenderer {
 	//size := SourceAtlas.imageSize
 	var texture uint32
 	gl.GenTextures(1, &texture)
@@ -56,26 +62,41 @@ func SpriteRendererFactory( /*SourceAtlas ImageAtlas*/ ) SpriteRenderer {
 	if err != nil {
 		panic(err)
 	}
+	var maxSprites = 1024
 	var vert []float32
-	var elem []uint32
+	var elem ElementBuffer
 	var allocation []bool
-
+	var subs []SpriteRendererSubscriber
+	var uniform map[string]map[uint32]int32 = make(map[string]map[uint32]int32)
 	//Make the sprite atlas
 
-	newRenderer := SpriteRenderer{vbo, vao, ebo, 0, program, vert, elem, allocation}
+	newRenderer := SpriteRenderer{vbo, vao, ebo, 0, int32(maxSprites), program, vert, elem, allocation, uniform, subs}
 	newRenderer.init()
 	return newRenderer
 }
 
 func (thisRenderer *SpriteRenderer) Render(width, height int32) {
+	//Setup uniforms only once
+	if len(thisRenderer.uniformlocations) == 0 {
+		thisRenderer.uniformlocations["texture1"+"\x00"] = make(map[uint32]int32)
+		thisRenderer.uniformlocations["texture1"+"\x00"][thisRenderer.programObject] = gl.GetUniformLocation(thisRenderer.programObject, gl.Str("texture1"+"\x00"))
+		thisRenderer.uniformlocations["MVT"+"\x00"] = make(map[uint32]int32)
+		thisRenderer.uniformlocations["MVT"+"\x00"][thisRenderer.programObject] = gl.GetUniformLocation(thisRenderer.programObject, gl.Str("MVT"+"\x00"))
+	}
+
+	//Notify subscribers that the program is about to render.
+	for _, v := range thisRenderer.subscribers {
+		v.RendererCallback()
+	}
+
 	// 1st attribute buffer : vertices
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.Viewport(0, 0, width, height)
 
 	orthomat := linmath.NewOrthoMat4f(float32(height), 0, 0, float32(width), 1, 0)
 	gl.UseProgram(thisRenderer.programObject)
-	gl.Uniform1i(gl.GetUniformLocation(thisRenderer.programObject, gl.Str("texture1"+"\x00")), 0)
-	loc := gl.GetUniformLocation(thisRenderer.programObject, gl.Str("MVT"+"\x00"))
+	gl.Uniform1i(thisRenderer.uniformlocations["texture1"+"\x00"][thisRenderer.programObject], 0)
+	loc := thisRenderer.uniformlocations["MVT"+"\x00"][thisRenderer.programObject]
 	mat := orthomat.ToFloats()
 	gl.UniformMatrix4fv(loc, 1, false, &mat[0])
 	thisRenderer.bind()
@@ -85,9 +106,9 @@ func (thisRenderer *SpriteRenderer) Render(width, height int32) {
 }
 
 func (thisRenderer *SpriteRenderer) init() {
-	thisRenderer.allocation = append(thisRenderer.allocation, false)
-	thisRenderer.vert = append(thisRenderer.vert, make([]float32, 28)...)
-	thisRenderer.elem = append(thisRenderer.elem, make([]uint32, 6)...)
+	thisRenderer.allocation = make([]bool, thisRenderer.maxSprites)
+	thisRenderer.vert = make([]float32, thisRenderer.maxSprites*28)
+	thisRenderer.elem.setSize(int(thisRenderer.maxSprites))
 
 	thisRenderer.bind()
 	// Configure global settings
@@ -119,7 +140,7 @@ func (thisRenderer *SpriteRenderer) bind() {
 	gl.BindBuffer(gl.ARRAY_BUFFER, thisRenderer.vertexBufferObject)
 	gl.BufferData(gl.ARRAY_BUFFER, len(thisRenderer.vert)*4, gl.Ptr(thisRenderer.vert), gl.STATIC_DRAW)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, thisRenderer.elementBufferObject)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(thisRenderer.elem)*4, gl.Ptr(thisRenderer.elem), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(thisRenderer.elem.GetArray())*4, gl.Ptr(thisRenderer.elem.GetArray()), gl.STATIC_DRAW)
 
 }
 
@@ -129,17 +150,16 @@ func (thisRenderer *SpriteRenderer) unbind() {
 	gl.BindVertexArray(0)
 }
 
-func (thisRenderer *SpriteRenderer) GetArraySprite() (returnSlice []float32, spriteNum int32) {
-	slot := uint32(thisRenderer.allocate())
-	spriteNum = int32(slot)
-	returnSlice = thisRenderer.vert[slot*28 : (slot+1)*28]
-	newElem := []uint32{slot * 4, slot*4 + 1, slot*4 + 2, slot*4 + 2, slot*4 + 3, slot*4 + 1}
+func (thisRenderer *SpriteRenderer) SubscribeSprite(sprite SpriteRendererSubscriber) (returnSlice []float32, spriteNum int32) {
+	spriteNum = int32(thisRenderer.allocate())
+	thisRenderer.subscribers = append(thisRenderer.subscribers, sprite)
+	returnSlice = thisRenderer.vert[spriteNum*28 : (spriteNum+1)*28]
 	thisRenderer.numOfSprites = thisRenderer.numOfSprites + 1
-	copy(thisRenderer.elem[slot*6:(slot+1)*6], newElem)
 	return
 }
 
 func (thisRenderer *SpriteRenderer) allocate() int32 {
+	//Look for open space first
 	for i, v := range thisRenderer.allocation {
 		if !v {
 			thisRenderer.allocation[i] = true
@@ -147,17 +167,34 @@ func (thisRenderer *SpriteRenderer) allocate() int32 {
 		}
 	}
 
-	thisRenderer.allocation = append(thisRenderer.allocation, true)
-	thisRenderer.vert = append(thisRenderer.vert, make([]float32, 28)...)
-	thisRenderer.elem = append(thisRenderer.elem, make([]uint32, 6)...)
-	return int32(len(thisRenderer.allocation) - 1)
+	//No room in current
+	//Notify subscribers and generate a new array
+	thisRenderer.maxSprites = thisRenderer.maxSprites * 2
+	thisRenderer.elem.setSize(int(thisRenderer.maxSprites))
+	thisRenderer.vert = make([]float32, thisRenderer.maxSprites*28)
+	thisRenderer.allocation = make([]bool, thisRenderer.maxSprites)
+	for i, v := range thisRenderer.subscribers {
+		v.UpdateRenderVert(thisRenderer.vert[i*28:(i+1)*28], int32(i))
+		thisRenderer.allocation[i] = true
+	}
+	return thisRenderer.allocate()
 }
 
-func (thisRenderer *SpriteRenderer) DeallocateSprite(num int32) {
+//Add check for 25% reduce array
+func (thisRenderer *SpriteRenderer) Unsubscribe(sub SpriteRendererSubscriber, num int32) {
+	//Zero data in the vertice
 	newVert := make([]float32, 28)
 	copy(thisRenderer.vert[num*28:(num+1)*28], newVert)
-	newElem := make([]uint32, 6)
-	copy(thisRenderer.elem[num*6:(num+1)*6], newElem)
 
+	//Deallocate
 	thisRenderer.allocation[num] = false
+
+	//Will be fixed with a proper map
+	for i, v := range thisRenderer.subscribers {
+		if v == sub {
+			thisRenderer.subscribers[i] = thisRenderer.subscribers[len(thisRenderer.subscribers)-1]
+			thisRenderer.subscribers = thisRenderer.subscribers[0 : len(thisRenderer.subscribers)-2]
+			return
+		}
+	}
 }
