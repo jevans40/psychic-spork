@@ -1,5 +1,8 @@
 package render
 
+var _ SpriteRendererSubscriber = (*simpleSprite)(nil)
+var _ Sprite = (*simpleSprite)(nil)
+
 type simpleSprite struct {
 	verticeData     []float32
 	size            [2]float32
@@ -24,7 +27,6 @@ func SimpleSpriteFactory(thisRenderer *SpriteRenderer) Sprite {
 	spritenum := 0
 
 	sprite := simpleSprite{vertdat, size, pos, texPos, texSize, uint32(texMap), col, int32(spritenum), thisRenderer}
-	var _ SpriteRendererSubscriber = (*simpleSprite)(nil)
 	sprite.verticeData, sprite.spriteNum = thisRenderer.SubscribeSprite(&sprite)
 	sprite.calculateVerticies()
 	return &sprite

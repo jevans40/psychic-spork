@@ -9,13 +9,14 @@ import (
 	"time"
 
 	"github.com/jevans40/psychic-spork/event"
+	"github.com/jevans40/psychic-spork/objects"
 )
 
 //This is a really simple object that calculates the nth fibbo number recursively once per update.
 //Once it reaches f(n) it creates a copy of itself with n set to some random number between 1 and 50 and starts again from 1.
 //Once every n calculations it sends a message to its child node
 type FibboObject struct {
-	Worker *UpdateWorker
+	callback objects.EventCallback
 	//Goal
 	FibboN int
 	//Current Number
@@ -40,7 +41,7 @@ func (f *FibboObject) Update(iteration int) {
 			Last = tmp
 		}
 	}
-	f.Worker.SendEvent(Event{EventCode: event.UpdateEvent_PassMessage,
+	f.callback(event.UpdateEvent{EventCode: event.UpdateEvent_PassMessage,
 		Sender:   f.messager,
 		Receiver: f.messager,
 		Event:    event.UpdateEvent_PassMessageEvent{f.tosend}})
@@ -50,7 +51,7 @@ func (f *FibboObject) Update(iteration int) {
 		r := rand.New(rand.NewSource(int64(iteration)))
 		newFibbo := FibboObject{nil, 30, 0, r, f.gen + 1, 0, make([]int, 640)}
 		f.gen = f.gen + 1
-		f.Worker.SendEvent(Event{EventCode: event.UpdateEvent_NewObject,
+		f.callback(event.UpdateEvent{EventCode: event.UpdateEvent_NewObject,
 			Sender:   f.messager,
 			Receiver: -1,
 			Event:    event.UpdateEvent_NewObjectEvent{&newFibbo}})
@@ -59,7 +60,7 @@ func (f *FibboObject) Update(iteration int) {
 	}
 }
 
-func (f *FibboObject) SendEvent(e Event) {
+func (f *FibboObject) SendEvent(e event.UpdateEvent) {
 	//Eat Event for Now
 	if e.EventCode == event.UpdateEvent_NewObject {
 		if e.Receiver > 0 {
@@ -75,8 +76,8 @@ func (f *FibboObject) SendEvent(e Event) {
 	}
 }
 
-func (f *FibboObject) SetEventCallback(u *UpdateWorker) {
-	f.Worker = u
+func (f *FibboObject) SetEventCallback(call objects.EventCallback) {
+	f.callback = call
 }
 
 func (f *FibboObject) Render() []float32 {
@@ -100,9 +101,9 @@ func Clock(iterations int, clockChannel chan int, waitgroup *sync.WaitGroup) {
 }
 
 func TestUpdate(t *testing.T) {
-	var _ Object = (*FibboObject)(nil)
+	var _ objects.Object = (*FibboObject)(nil)
 	seed := 1337
-	test1EventChan := make(chan []Event)
+	test1EventChan := make(chan []event.UpdateEvent)
 	test1RenderChan := make(chan []float32)
 	r := rand.New(rand.NewSource(int64(seed)))
 	newFibbo := FibboObject{nil, r.Intn(31), 0, r, 0, 0, make([]int, 1024)}
@@ -114,7 +115,7 @@ func TestUpdate(t *testing.T) {
 	clockChannel := make(chan int)
 	go Clock(5000, clockChannel, &wait)
 	go coordinator.Start(clockChannel)
-	test1EventChan <- []Event{Event{EventCode: event.UpdateEvent_NewObject,
+	test1EventChan <- []event.UpdateEvent{event.UpdateEvent{EventCode: event.UpdateEvent_NewObject,
 		Receiver: -1,
 		Sender:   -1,
 		Event:    event.UpdateEvent_NewObjectEvent{&newFibbo}}}
@@ -123,9 +124,9 @@ func TestUpdate(t *testing.T) {
 
 func BenchmarkUpdate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		var _ Object = (*FibboObject)(nil)
+		var _ objects.Object = (*FibboObject)(nil)
 		seed := 1337
-		test1EventChan := make(chan []Event)
+		test1EventChan := make(chan []event.UpdateEvent)
 		test1RenderChan := make(chan []float32)
 		r := rand.New(rand.NewSource(int64(seed)))
 		newFibbo := FibboObject{nil, 30, 0, r, 0, 0, make([]int, 1024)}
@@ -137,7 +138,7 @@ func BenchmarkUpdate(b *testing.B) {
 		clockChannel := make(chan int)
 		go Clock(5000, clockChannel, &wait)
 		go coordinator.Start(clockChannel)
-		test1EventChan <- []Event{Event{EventCode: event.UpdateEvent_NewObject,
+		test1EventChan <- []event.UpdateEvent{event.UpdateEvent{EventCode: event.UpdateEvent_NewObject,
 			Sender:   -1,
 			Receiver: -1,
 			Event:    event.UpdateEvent_NewObjectEvent{&newFibbo}}}

@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/jevans40/psychic-spork/event"
-	"github.com/jevans40/psychic-spork/game"
+	"github.com/jevans40/psychic-spork/objects"
 )
 
 type UpdateWorker struct {
@@ -14,14 +14,14 @@ type UpdateWorker struct {
 	coordinator chan []event.UpdateEvent
 	waitGroup   *sync.WaitGroup
 
-	Objects map[int]game.Object
+	Objects map[int]objects.Object
 	//This needs to be changed out for a new datastructure that keeps track of what
 	eventQueue []event.UpdateEvent
 	toSend     []event.UpdateEvent
 }
 
 func UpdateWorkerFactory(update chan int, render chan struct{}, eventm chan []event.UpdateEvent, corrdinatorEvent chan []event.UpdateEvent, wait *sync.WaitGroup) *UpdateWorker {
-	ob := make(map[int]game.Object)
+	ob := make(map[int]objects.Object)
 	var eventq []event.UpdateEvent
 	var send []event.UpdateEvent
 	return &UpdateWorker{update, render, eventm, corrdinatorEvent, wait, ob, eventq, send}
@@ -66,7 +66,7 @@ func (w *UpdateWorker) ProcessEvents() {
 
 		if e.EventCode == event.UpdateEvent_NewObject {
 			ev := (e.Event).(event.UpdateEvent_NewObjectEvent)
-			w.Objects[e.Receiver] = (ev.Object).(game.Object)
+			w.Objects[e.Receiver] = (ev.Object).(objects.Object)
 			w.Objects[e.Receiver].SetEventCallback(w.SendEvent)
 			w.Objects[e.Receiver].SendEvent(e)
 		} else if e.EventCode == event.UpdateEvent_RemoveObject {

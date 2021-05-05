@@ -1,4 +1,4 @@
-package game
+package objects
 
 import "github.com/jevans40/psychic-spork/event"
 
