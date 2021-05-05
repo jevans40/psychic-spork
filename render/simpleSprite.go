@@ -1,5 +1,7 @@
 package render
 
+import "github.com/jevans40/psychic-spork/linmath"
+
 var _ SpriteRendererSubscriber = (*simpleSprite)(nil)
 var _ Sprite = (*simpleSprite)(nil)
 
@@ -34,7 +36,10 @@ func SimpleSpriteFactory(thisRenderer *SpriteRenderer) Sprite {
 
 func (thisSprite *simpleSprite) calculateVerticies() {
 
-	vert := [4]vertice{}
+	vert := make([]linmath.Vertice, 4)
+	for i, _ := range vert {
+		vert[i] = linmath.EmptyVertice()
+	}
 
 	for i := 0; i < 4; i++ {
 		vert[i].SetColor(thisSprite.color)
@@ -47,7 +52,8 @@ func (thisSprite *simpleSprite) calculateVerticies() {
 	}
 
 	for i, v := range vert {
-		copy(thisSprite.verticeData[7*i:7*i+7], v[:])
+		floats := v.ToFloats()
+		copy(thisSprite.verticeData[7*i:7*i+7], floats[:])
 	}
 }
 

@@ -114,7 +114,7 @@ func TestUpdate(t *testing.T) {
 
 	clockChannel := make(chan int)
 	go Clock(5000, clockChannel, &wait)
-	go coordinator.Start(clockChannel)
+	go coordinator.Start(clockChannel, nil)
 	test1EventChan <- []event.UpdateEvent{event.UpdateEvent{EventCode: event.UpdateEvent_NewObject,
 		Receiver: -1,
 		Sender:   -1,
@@ -137,7 +137,7 @@ func BenchmarkUpdate(b *testing.B) {
 
 		clockChannel := make(chan int)
 		go Clock(5000, clockChannel, &wait)
-		go coordinator.Start(clockChannel)
+		go coordinator.Start(clockChannel, nil)
 		test1EventChan <- []event.UpdateEvent{event.UpdateEvent{EventCode: event.UpdateEvent_NewObject,
 			Sender:   -1,
 			Receiver: -1,

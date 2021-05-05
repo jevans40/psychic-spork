@@ -72,6 +72,10 @@ func (g *Game) Start() {
 	glfw.DetachCurrentContext()
 	(g.window.GetWindow()).MakeContextCurrent()
 
+	event.EventsInit()
+
+	g.window.GetWindow().SetKeyCallback(glfw.KeyCallback(event.EventKeyCallback))
+
 	//Initialize open-gl
 	if err := gl.Init(); err != nil {
 		logging.Log.Panic(err)
@@ -108,7 +112,10 @@ func (g *Game) Start() {
 
 	go syncClock.Start()
 	go g.Render()
-	go g.coordinator.Start(g.CommunicationChannel)
+
+	eventloop := make(chan event.UpdateEvent)
+	go g.coordinator.Start(g.CommunicationChannel, eventloop)
+	go event.EventSubscriberLoop(eventloop)
 
 	event.EventLoop()
 }

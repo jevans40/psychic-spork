@@ -49,12 +49,12 @@ func Render(vbo, program uint32) {
 
 //NewTestRenderer i dont know why i need a comment yet but here it be
 func NewTestRenderer(programObject uint32) Renderer {
-	vert1 := VerticeFactory(100, 100, 50, 0, 0, 0, 255, 255, 255, 0)
-	vert2 := VerticeFactory(100, 1000, 50, 0, 0, 0, 255, 0, 255, 0)
-	vert3 := VerticeFactory(1000, 100, 50, 0, 0, 200, 255, 255, 255, 0)
-	vert4 := VerticeFactory(1000, 1000, 50, 0, 0, 200, 255, 0, 255, 0)
+	vert1 := linmath.VerticeFactory(100, 100, 50, 0, 0, 0, 255, 255, 255, 0)
+	vert2 := linmath.VerticeFactory(100, 1000, 50, 0, 0, 0, 255, 0, 255, 0)
+	vert3 := linmath.VerticeFactory(1000, 100, 50, 0, 0, 200, 255, 255, 255, 0)
+	vert4 := linmath.VerticeFactory(1000, 1000, 50, 0, 0, 200, 255, 0, 255, 0)
 
-	triangle := make([]Vertice, 4)
+	triangle := make([]linmath.Vertice, 4)
 	triangle[0] = vert1
 	triangle[1] = vert2
 	triangle[2] = vert3

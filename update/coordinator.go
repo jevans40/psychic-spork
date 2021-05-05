@@ -100,7 +100,7 @@ func (c *Coordinator) Init() {
 	}
 }
 
-func (c *Coordinator) Start(ClockChannel chan int) {
+func (c *Coordinator) Start(ClockChannel chan int, eventLoopChannel chan event.UpdateEvent) {
 	for _, worker := range c.workers {
 		go worker.Start()
 	}

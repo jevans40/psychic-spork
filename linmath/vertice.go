@@ -1,4 +1,4 @@
-package render
+package linmath
 
 import (
 	"encoding/binary"
@@ -35,6 +35,10 @@ type vertice [7]float32
 //NewVertice Factory for creating a new vertice
 func VerticeFactory(x, y, z, tx, ty float32, R, G, B, A uint8, texmap uint32) Vertice {
 	return &vertice{x, y, z, tx, ty, intToFloat(charToInt(([4]uint8{R, G, B, A}))), intToFloat(texmap)}
+}
+
+func EmptyVertice() Vertice {
+	return &vertice{0, 0, 0, 0, 0, 0, 0}
 }
 
 //charToInt converts a char array to a single int
