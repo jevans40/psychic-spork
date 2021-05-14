@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/jevans40/psychic-spork/linmath"
 )
 
 //This package gets mouse/keyboard input from the mouse
@@ -32,6 +33,9 @@ var keyInverse map[int]Key
 var keyListeners map[string](map[int]chan int)
 var keyListenerLock sync.Mutex
 
+var windowListeners map[int](chan linmath.PSPoint)
+var windowListenersLock sync.Mutex
+
 //All events are lossy, events that cant be sent will just be ignored.
 func EventKeyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	keyListenerLock.Lock()
@@ -59,9 +63,30 @@ func EventSubscriberLoop(e chan UpdateEvent) {
 			close(keyListeners[ev.EventSubscriptionName][event.Sender])
 			delete(keyListeners[ev.EventSubscriptionName], event.Sender)
 			keyListenerLock.Unlock()
+		} else if event.EventCode == SubscribeEvent_WindowResize {
+			ev := (event.Event).(SubscribeEvent_WindowResizeEvent)
+			windowListenersLock.Lock()
+			windowListeners[event.Sender] = ev.ListeningChannel
+			windowListenersLock.Unlock()
+		} else if event.EventCode == SubscribeEvent_UnSubscribe_WindowResize {
+			windowListenersLock.Lock()
+			delete(windowListeners, event.Sender)
+			windowListenersLock.Unlock()
 		}
-
 	}
+}
+
+//This should be called from the window resize callback function
+func NotifyWindowResizeListeners(x int, y int) {
+	newPoint := linmath.NewPSPoint(int32(x), int32(y))
+	windowListenersLock.Lock()
+	for _, v := range windowListeners {
+		select {
+		case v <- newPoint:
+		default:
+		}
+	}
+	windowListenersLock.Unlock()
 }
 
 func EventLoop() {
@@ -73,12 +98,14 @@ func EventLoop() {
 //Must be called before the main loop but after glfw is initialized
 func EventsInit() {
 	keyStore = make(map[string]Key)
+	windowListeners = make(map[int](chan linmath.PSPoint))
 	//You know.. there is probably a smart way to do this....
 	//But.....
-	keyStore["Unknown"] = Key{"Unknown", glfw.GetKeyScancode(glfw.KeyUnknown), int(glfw.KeyUnknown)}
+	//keyStore["Unknown"] = Key{"Unknown", glfw.GetKeyScancode(glfw.KeyUnknown), int(glfw.KeyUnknown)}
 	keyStore["Space"] = Key{"Space", glfw.GetKeyScancode(glfw.KeySpace), int(glfw.KeySpace)}
+	keyStore["Apostrophe"] = Key{"Apostrophe", glfw.GetKeyScancode(glfw.KeyApostrophe), int(glfw.KeyApostrophe)}
+	//KeySpace  Key = C.GLFW_KEY_SPACE
 	/*
-		KeyApostrophe   Key = C.GLFW_KEY_APOSTROPHE
 		KeyComma        Key = C.GLFW_KEY_COMMA
 		KeyMinus        Key = C.GLFW_KEY_MINUS
 		KeyPeriod       Key = C.GLFW_KEY_PERIOD

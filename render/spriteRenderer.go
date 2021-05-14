@@ -37,6 +37,9 @@ func SpriteRendererFactory( /*SourceAtlas ImageAtlas,*/ ) SpriteRenderer {
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+	//This section is required, without it the game will crash.
+	//I don't know why
 	data := file.LoadImageFromFile("./res/image/God.png")
 	rect := data.Bounds()
 	rgba := image.NewRGBA(rect)
@@ -114,7 +117,7 @@ func (thisRenderer *SpriteRenderer) init() {
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0.0, 0.2, 0.1, 0.0)
+	gl.ClearColor(1, 1, 1, 1)
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
@@ -160,8 +163,9 @@ func (thisRenderer *SpriteRenderer) SubscribeSprite(sprite SpriteRendererSubscri
 
 func (thisRenderer *SpriteRenderer) allocate() int32 {
 	//Look for open space first
-	for i, v := range thisRenderer.allocation {
-		if !v {
+	for i := thisRenderer.numOfSprites; int(i) < len(thisRenderer.allocation); i++ {
+
+		if !thisRenderer.allocation[i] {
 			thisRenderer.allocation[i] = true
 			return int32(i)
 		}

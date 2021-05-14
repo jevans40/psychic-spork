@@ -41,7 +41,6 @@ func Render(vbo, program uint32) {
 		gl.PtrOffset(0), // array buffer offset
 	)
 
-	//TODO:: Send colors
 	// Draw the triangle !
 	gl.DrawArrays(gl.TRIANGLES, 0, 3) // Starting from vertex 0; 3 vertices total -> 1 triangle
 	gl.DisableVertexAttribArray(0)

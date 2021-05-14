@@ -18,7 +18,7 @@ out flat int TexMap;
 
 
 void main(){
-	Color = color;
+	Color = color * vec4(1,1,1,1);
 	TexPos = texPos;
 	TexMap = texMap;
 	//gl_Position = vec4(position.x,position.y,position.z,1.0);

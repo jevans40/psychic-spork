@@ -2,10 +2,14 @@ package update
 
 import (
 	"sync"
+	"time"
 
 	"github.com/jevans40/psychic-spork/event"
+	"github.com/jevans40/psychic-spork/linmath"
 	"github.com/jevans40/psychic-spork/objects"
 )
+
+var _ objects.ObjEnviroment = (*UpdateWorker)(nil)
 
 type UpdateWorker struct {
 	update      chan int
@@ -13,6 +17,7 @@ type UpdateWorker struct {
 	event       chan []event.UpdateEvent
 	coordinator chan []event.UpdateEvent
 	waitGroup   *sync.WaitGroup
+	toRender    []float32
 
 	Objects map[int]objects.Object
 	//This needs to be changed out for a new datastructure that keeps track of what
@@ -24,15 +29,25 @@ func UpdateWorkerFactory(update chan int, render chan struct{}, eventm chan []ev
 	ob := make(map[int]objects.Object)
 	var eventq []event.UpdateEvent
 	var send []event.UpdateEvent
-	return &UpdateWorker{update, render, eventm, corrdinatorEvent, wait, ob, eventq, send}
+	var toRender []float32
+	return &UpdateWorker{update, render, eventm, corrdinatorEvent, wait, toRender, ob, eventq, send}
 }
 
-func (w *UpdateWorker) Start() {
+func (w *UpdateWorker) Start(renderchan chan []float32) {
+	total := time.Duration(0)
+	times := 0
 	for {
 		select {
 
 		case <-w.render:
-			w.Render()
+			start := time.Now()
+			w.Render(renderchan)
+			total = total + time.Since(start)
+			times = times + 1
+			if times%120 == 0 {
+				//fmt.Printf("%v average per frame\n", total/120)
+				total = time.Duration(0)
+			}
 		case updates := <-w.update:
 			w.ProcessEvents()
 			w.UpdateObjects(updates)
@@ -43,12 +58,14 @@ func (w *UpdateWorker) Start() {
 	}
 }
 
-func (w *UpdateWorker) Render() {
+func (w *UpdateWorker) Render(renderchan chan []float32) {
 	defer w.waitGroup.Done()
-	renderlist := make([]float32, 28*len(w.Objects))
-	for i, v := range w.Objects {
-		copy(renderlist[i*28:(i+1)*28], v.Render()[:])
+	i := 0
+	for _, v := range w.Objects {
+		v.Render(w.toRender[i*28 : (i+1)*28])
+		i++
 	}
+	renderchan <- w.toRender[:]
 }
 
 func (w *UpdateWorker) UpdateObjects(time int) {
@@ -67,10 +84,12 @@ func (w *UpdateWorker) ProcessEvents() {
 		if e.EventCode == event.UpdateEvent_NewObject {
 			ev := (e.Event).(event.UpdateEvent_NewObjectEvent)
 			w.Objects[e.Receiver] = (ev.Object).(objects.Object)
-			w.Objects[e.Receiver].SetEventCallback(w.SendEvent)
+			w.Objects[e.Receiver].SetEnviroment(w)
 			w.Objects[e.Receiver].SendEvent(e)
+			w.toRender = append(w.toRender, make([]float32, 28)...)
 		} else if e.EventCode == event.UpdateEvent_RemoveObject {
 			delete(w.Objects, e.Receiver)
+			w.toRender = w.toRender[0 : len(w.toRender)-28]
 		} else if e.EventCode == event.UpdateEvent_PassMessage {
 			w.Objects[e.Receiver].SendEvent(e)
 		} else if e.EventCode == event.UpdateEvent_FailedSendMessage {
@@ -107,47 +126,14 @@ func (w *UpdateWorker) PassEvents() {
 	w.toSend = w.toSend[:0]
 }
 
-/*
-type UpdateWorker interface {
-	StartUpdateLoop()
-	AddListener(listener chan event.AsyncEvent)
+func (w *UpdateWorker) GetWindowSize() linmath.PSPoint {
+	return linmath.NewPSPoint(1080, 920)
 }
 
-type simpleWorker struct {
-	messagingChan <-chan event.AsyncEvent
-	replyChan     chan event.AsyncEvent
-	waitG         *sync.WaitGroup
-	entityList    Entity
+func (w *UpdateWorker) GetEventCallback() objects.EventCallback {
+	return w.SendEvent
 }
 
-type EventList interface {
+func (w *UpdateWorker) GetMousePosition() linmath.PSPoint {
+	return linmath.NewPSPoint(1080/2, 920/2)
 }
-
-func (sw *simpleWorker) StartUpdateLoop() {
-	closed := false
-	for !closed {
-		select {
-		case i, ok := <-sw.messagingChan:
-			//Check if chanel was closed
-			if !ok {
-				closed = true
-			}
-
-			//Update entities
-			switch v := i.GetType(); v {
-			case event.UpdateEvent:
-
-			}
-		}
-	}
-}
-
-func (sw *simpleWorker) AddListener(listener chan event.AsyncEvent) {
-	sw.messagingChan = listener
-}
-
-func WorkerFactory(wg *sync.WaitGroup, replychan chan event.AsyncEvent) UpdateWorker {
-	worker := simpleWorker{waitG: wg, replyChan: replychan}
-	return &worker
-}
-*/

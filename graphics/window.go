@@ -2,6 +2,7 @@ package graphics
 
 import (
 	"github.com/go-gl/glfw/v3.3/glfw"
+	"github.com/jevans40/psychic-spork/event"
 )
 
 // GoWindow the struct that holds glfw window information
@@ -44,5 +45,6 @@ func (thisWindow *GoWindow) SizeCallback(w *glfw.Window, width int, height int) 
 func (thisWindow *GoWindow) GetSize() (x int, y int) {
 	x = thisWindow.lSize[0]
 	y = thisWindow.lSize[1]
+	event.NotifyWindowResizeListeners(x, y)
 	return
 }

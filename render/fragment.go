@@ -11,14 +11,14 @@ in vec2 TexPos;
 in vec4 Color;
 in flat int TexMap;
 
-out vec4 fragcolor;
+out vec4 FragColor;
 
 void main(){
   if (TexMap > 0){
-    fragcolor = texture(texture1,TexPos) * Color;
+    FragColor = texture(texture1,TexPos) * Color;
   }
   else {
-    fragcolor = Color;
+    FragColor = Color * vec4(1,1,1,1);
   }
 }
 ` + "\x00"

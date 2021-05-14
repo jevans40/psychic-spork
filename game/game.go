@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"runtime"
+	"runtime/debug"
 	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
@@ -20,7 +21,6 @@ const Version = "0.1"
 //This is the entrypoint for the rest of the program
 type Game struct {
 	window               *graphics.GoWindow
-	renderer             render.SpriteRenderer
 	coordinator          *update.Coordinator
 	EventChannel         chan []event.UpdateEvent
 	RenderChannel        chan []float32
@@ -29,15 +29,13 @@ type Game struct {
 
 func (g *Game) Init() error {
 	//Initalize Channels for component communication
-	g.EventChannel = make(chan []event.UpdateEvent)
-	g.RenderChannel = make(chan []float32)
-	g.CommunicationChannel = make(chan int)
+	g.EventChannel = make(chan []event.UpdateEvent, runtime.NumCPU())
+	g.RenderChannel = make(chan []float32, runtime.NumCPU())
+	g.CommunicationChannel = make(chan int, runtime.NumCPU())
 
-	//Create the renderer
-	g.renderer = render.SpriteRendererFactory()
-
-	//Create the coordinator
-	g.coordinator = update.CoordinatorFactory(g.EventChannel, g.RenderChannel)
+	//We have two forever blocking locked threads, so its okay to spawn a few more that the scheduler can play with.
+	runtime.GOMAXPROCS(runtime.NumCPU() + 2)
+	debug.SetGCPercent(200)
 
 	return nil
 }
@@ -68,15 +66,35 @@ func (g *Game) Start() {
 	defer glfw.Terminate()
 	glfw.WaitEvents()
 
-	//Initialize window context
-	glfw.DetachCurrentContext()
-	(g.window.GetWindow()).MakeContextCurrent()
-
 	event.EventsInit()
 
-	g.window.GetWindow().SetKeyCallback(glfw.KeyCallback(event.EventKeyCallback))
+	//g.window.GetWindow().SetKeyCallback(glfw.KeyCallback(event.EventKeyCallback))
 
+	//Create the coordinator
+	g.coordinator = update.CoordinatorFactory(g.EventChannel, g.RenderChannel)
+
+	syncClock := Clock{}
+	syncClock.SetChannels(g.CommunicationChannel)
+	syncClock.SetDurations(time.Millisecond*time.Duration(16), time.Millisecond*time.Duration(16))
+
+	go syncClock.Start()
+	go g.Render()
+
+	eventloop := make(chan event.UpdateEvent)
+	go g.coordinator.Start(g.CommunicationChannel, eventloop)
+	go event.EventSubscriberLoop(eventloop)
+
+	event.EventLoop()
+}
+
+func (g *Game) Render() {
+	//Old vs new buffer
+
+	//THIS HAS TO BE IN THE SAME THREAD AS THE OTHER RENDERING
 	//Initialize open-gl
+	runtime.LockOSThread()
+	glfw.DetachCurrentContext()
+	(g.window.GetWindow()).MakeContextCurrent()
 	if err := gl.Init(); err != nil {
 		logging.Log.Panic(err)
 	}
@@ -105,32 +123,17 @@ func (g *Game) Start() {
 
 	//Log game version
 	logging.Log.Infof("Psychic Spork Version: %s", Version)
-
-	syncClock := Clock{}
-	syncClock.SetChannels(g.CommunicationChannel)
-	syncClock.SetDurations(time.Millisecond*time.Duration(16), time.Millisecond*time.Duration(5))
-
-	go syncClock.Start()
-	go g.Render()
-
-	eventloop := make(chan event.UpdateEvent)
-	go g.coordinator.Start(g.CommunicationChannel, eventloop)
-	go event.EventSubscriberLoop(eventloop)
-
-	event.EventLoop()
-}
-
-func (g *Game) Render() {
-	//Old vs new buffer
 	var Buffer []float32
 	numObjects := 0
 	var sprites []*render.VertexRenderable
+	renderer := render.SpriteRendererFactory()
 	for {
+		//Create the renderer
 		Buffer = <-g.RenderChannel
 
 		numObjects = len(Buffer) / 28
 		for len(sprites) < numObjects {
-			sprites = append(sprites, render.VertexSpriteFactory(&g.renderer))
+			sprites = append(sprites, render.VertexSpriteFactory(&renderer))
 		}
 		for len(sprites) > numObjects {
 			sprites = sprites[0 : len(sprites)-2]
@@ -139,7 +142,7 @@ func (g *Game) Render() {
 			v.SetVerticies(Buffer[i*28 : (i+1)*28])
 		}
 		x, y := g.window.GetSize()
-		g.renderer.Render(int32(x), int32(y))
+		renderer.Render(int32(x), int32(y))
 		g.window.GetWindow().SwapBuffers()
 	}
 }

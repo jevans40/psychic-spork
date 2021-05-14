@@ -5,8 +5,8 @@ import "github.com/jevans40/psychic-spork/event"
 type EventCallback func(e event.UpdateEvent)
 
 type Object interface {
-	SetEventCallback(EventCallback)
+	SetEnviroment(env ObjEnviroment)
 	SendEvent(event.UpdateEvent)
 	Update(int)
-	Render() []float32
+	Render([]float32)
 }

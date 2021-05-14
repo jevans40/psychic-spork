@@ -20,7 +20,6 @@ type vector3 [3]float32
 //x float32
 //y float32
 //z float32
-//w float32
 func NewVector3(x float32, y float32, z float32) Vector3 {
 	newVec := vector3{x, y, z}
 	return &newVec
