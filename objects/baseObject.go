@@ -1,5 +1,6 @@
 package objects
 
+/*
 import (
 	"github.com/jevans40/psychic-spork/event"
 	"github.com/jevans40/psychic-spork/linmath"
@@ -120,3 +121,4 @@ func (b *BaseObject) MakeObject(object Object) {
 		Event:    event.UpdateEvent_NewObjectEvent{object}}
 	b.env.GetEventCallback()(newObjectEvent)
 }
+*/

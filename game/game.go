@@ -29,7 +29,7 @@ type Game struct {
 
 func (g *Game) Init() error {
 	//Initalize Channels for component communication
-	g.EventChannel = make(chan []event.UpdateEvent, runtime.NumCPU())
+	g.EventChannel = make(chan []event.UpdateEvent, runtime.NumCPU()*100)
 	g.RenderChannel = make(chan []float32, runtime.NumCPU())
 	g.CommunicationChannel = make(chan int, runtime.NumCPU())
 

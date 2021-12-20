@@ -79,7 +79,7 @@ func CoordinatorFactory(eventChannel chan []event.UpdateEvent, renderChannel cha
 //REFACTOR
 func (c *Coordinator) Init() {
 	//Create Worker's communication channels
-	numthreads := runtime.NumCPU() - 1
+	numthreads := 6 //runtime.NumCPU() - 1
 	for i := 0; i < numthreads; i++ {
 		//Once tested add a buffer for better performance
 		update := make(chan int)
